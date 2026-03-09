@@ -1,0 +1,59 @@
+# Build and distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Media files (large video files)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+*.webm
+*.m4v
+
+# Output and temporary directories
+clips/
+frames/
+plots/
+*.txt
+times.txt
+
+# OS files
+Thumbs.db
+.DS_Store
+.env
+.env.local
+
+# Compiled specs
+*.spec
+
+# Python environment
+venv/
+env/
+ENV/
+
+# Local configuration (if any)
+*.local
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Do NOT upload to any remote repository
+# This is a private local project
