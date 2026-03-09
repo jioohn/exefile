@@ -49,6 +49,13 @@ class VideoPlayer(QMainWindow):
         super().__init__()
         self.setWindowTitle("PyQt5 Video Player") 
         
+        # Initialize video variables
+        self.video_path = None
+        self.cap = None
+        self.is_playing = False
+        self.frame_count = 0
+        self.total_frames = 0
+        
         #I should create some options button such as frame rate
         
         
@@ -58,7 +65,7 @@ class VideoPlayer(QMainWindow):
         videoWidget = QVideoWidget()
  
     #play and pause button
-        self.playButton = QPushButton()
+        self.playButton = QPushButton("Play")
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.clicked.connect(self.play)
  
@@ -147,22 +154,68 @@ class VideoPlayer(QMainWindow):
  
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie",
-                QDir.homePath())
+                os.getcwd())
  
         if fileName != '':
-            self.mediaPlayer.setMedia(
-                    QMediaContent(QUrl.fromLocalFile(fileName)))
-        self.extractButton.setEnabled(True)
-        # self.faceButton.setEnabled(True)
-        self.binaryButton.setEnabled(True)
-        self.video_path = fileName
-        print("Open video in "+self.video_path)
+            # Test if cv2 can open the video (better codec support than DirectShow)
+            cap = cv2.VideoCapture(fileName)
+            if cap.isOpened():
+                self.video_path = fileName
+                self.cap = cap
+                self.is_playing = False
+                self.frame_count = 0
+                self.total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                print("Open video in " + self.video_path)
+                print(f"Total frames: {self.total_frames}")
+                self.extractButton.setEnabled(True)
+                self.binaryButton.setEnabled(True)
+            else:
+                print(f"Error: Could not open video file with cv2: {fileName}")
  
     def play(self):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.mediaPlayer.pause()
+        if not hasattr(self, 'video_path'):
+            print("No video loaded")
+            return
+        
+        self.is_playing = not self.is_playing
+        
+        if self.is_playing:
+            self.playButton.setText("Pause")
+            self.play_video()
         else:
-            self.mediaPlayer.play()
+            self.playButton.setText("Play")
+    
+    def play_video(self):
+        """Play video using cv2 in a separate window"""
+        if not hasattr(self, 'cap') or not self.cap.isOpened():
+            return
+        
+        while self.is_playing:
+            ret, frame = self.cap.read()
+            if not ret:
+                self.is_playing = False
+                self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                break
+            
+            # Resize for display
+            display_frame = cv2.resize(frame, (800, 600))
+            cv2.imshow("Video Player", display_frame)
+            
+            # Update frame counter
+            self.frame_count = int(self.cap.get(cv2.CAP_PROP_POS_FRAMES))
+            self.framebox.setText(f"Frame: {self.frame_count}/{self.total_frames}")
+            
+            # Check for key press (ESC to exit, Space to pause)
+            key = cv2.waitKey(33) & 0xFF  # 33ms per frame (~30fps)
+            if key == 27:  # ESC key
+                self.is_playing = False
+                cv2.destroyAllWindows()
+                break
+            elif key == 32:  # Space bar
+                self.is_playing = False
+                break
+            
+            QApplication.processEvents()  # Keep UI responsive
             
     def extract_frames(self):
     # Open the video file
